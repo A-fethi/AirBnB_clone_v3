@@ -52,13 +52,13 @@ class BaseModel:
         return "[{:s}] ({:s}) {}".format(self.__class__.__name__, self.id,
                                          self.__dict__)
 
-    def save(self, filestorage_save=None):
+    def save(self):
         """updates the attribute 'updated_at' with the current datetime"""
         self.updated_at = datetime.utcnow()
         models.storage.new(self)
         models.storage.save()
 
-    def to_dict(self):
+    def to_dict(self, filestorage_save=None):
         """returns a dictionary containing all keys/values of the instance"""
         new_dict = self.__dict__.copy()
         if "created_at" in new_dict:
