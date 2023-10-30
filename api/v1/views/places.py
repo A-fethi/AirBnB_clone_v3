@@ -13,7 +13,7 @@ from models import storage
 def get_places_by_city(city_id):
     """Retrieves the list of all Place objects of a City"""
     city = storage.get(City, city_id)
-    if city is None:
+    if not city:
         abort(404)
     places = city.places
     list_places = []
@@ -27,9 +27,9 @@ def get_places_by_city(city_id):
 def get_place_by_id(place_id):
     """Retrieves a Place object"""
     place = storage.get(Place, place_id)
-    if place:
-        return jsonify(place.to_dict())
-    abort(404)
+    if not place:
+        abort(404)
+    return jsonify(place.to_dict())
 
 
 @app_views.route('/places/<place_id>', methods=["DELETE"],
@@ -37,34 +37,34 @@ def get_place_by_id(place_id):
 def delete_place_by_id(place_id):
     """Deletes a Place object"""
     place = storage.get(Place, place_id)
-    if place:
-        storage.delete(place)
-        storage.save()
-        return jsonify({}), 200
-    abort(404)
+    if not place:
+        abort(404)
+    storage.delete(place)
+    storage.save()
+    return jsonify({}), 200
 
 
 @app_views.route('/cities/<city_id>/places', methods=["POST"],
                  strict_slashes=False)
 def post_place(city_id):
     """Creates a Place"""
-    cit = storage.get(City, city_id)
-    if city is None:
+    city = storage.get(City, city_id)
+    if not city:
         abort(404)
-    json_data = request.get_json()
-    if not json_data:
+    if not request.get_json():
         abort(400, description="Not a JSON")
-    if 'user_id' not in json_data:
+    if 'user_id' not in request.get_json():
         abort(400, description="Missing user_id")
+    json_data = request.get_json()
     user_id = json_data['user_id']
     user = storage.get(User, user_id)
     if not user:
         abort(404)
-    if 'name' not in json_data:
+    if 'name' not in request.get_json():
         abort(400, description="Missing name")
     json_data['city_id'] = city_id
     new_place = Place(**json_data)
-    storage.save()
+    new_place.save()
     return jsonify(new_place.to_dict()), 201
 
 
@@ -72,16 +72,14 @@ def post_place(city_id):
                  strict_slashes=False)
 def put_place(place_id):
     """Updates a Place object"""
-    json_data = request.get_json()
     place = storage.get(Place, place_id)
-    if not json_data:
+    if not request.get_json():
         abort(400, description="Not a JSON")
-    if place:
-        for k, v in json_data.items():
-            ignored_keys = ["id", "user_id", "city_id",
-                            "created_at", "updated_at"]
-            if k not in ignored_keys:
-                setattr(city, k, v)
-        storage.save()
-        return jsonify(place.to_dict()), 200
-    abort(404)
+    json_data = request.get_json()
+    ignored_keys = ['id', 'user_id', 'city_id',
+                    'created_at', 'updated_at']
+    for k, v in json_data.items():
+        if k not in ignored_keys:
+            setattr(place, k, v)
+    storage.save()
+    return jsonify(place.to_dict()), 200
